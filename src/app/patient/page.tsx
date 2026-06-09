@@ -3,74 +3,100 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function PatientDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [records, setRecords] = useState<any[]>([]);
+  const [patientData, setPatientData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth');
+      router.push('/auth/signin');
     }
   }, [status, router]);
 
-  if (status === 'loading') return <div className="p-24 text-center">Loading...</div>;
-  if (!session) return null;
+  useEffect(() => {
+    if (session?.user) {
+      fetch('/api/patient/profile')
+        .then(res => res.json())
+        .then(data => {
+          if (data.patient) {
+            setPatientData(data.patient);
+          }
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error(err);
+          setLoading(false);
+        });
+    }
+  }, [session]);
+
+  if (status === 'loading' || loading) return <div className="p-24 text-center text-muted-foreground">Loading your secure vault...</div>;
+  if (!session || !patientData) return <div className="p-24 text-center">Failed to load profile. Please sign in as a Patient.</div>;
 
   return (
     <div className="mx-auto max-w-5xl px-4 pt-24 pb-12">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-bold">Patient Dashboard</h1>
           <p className="text-muted-foreground mt-1">Welcome back, {session.user?.name}</p>
         </div>
-        <div className="rounded-xl border border-border/60 bg-background/60 p-4 shadow-sm text-center">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your MediVault ID</p>
-          <p className="text-xl font-bold text-gradient mt-1">MV-2026-7X4Q-K2P9</p>
+        
+        <div className="flex items-center gap-6 rounded-xl border border-border/60 bg-background/60 p-4 shadow-sm">
+          <div className="bg-white p-2 rounded-lg">
+            <QRCodeSVG value={patientData.mvid} size={80} level="H" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your MediVault ID</p>
+            <p className="text-xl font-bold text-gradient mt-1 tracking-widest">{patientData.mvid}</p>
+            <p className="text-xs text-muted-foreground mt-2">Scan for instant clinical access</p>
+          </div>
         </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3 mb-8">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground">Active Access Tokens</h3>
-          <p className="text-3xl font-bold mt-2">1</p>
+          <p className="text-3xl font-bold mt-2">{patientData.accessTokens?.filter((t: any) => t.status === 'ACTIVE').length || 0}</p>
           <button className="mt-4 text-sm font-semibold text-primary hover:underline">Manage Access</button>
         </div>
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground">Total Records</h3>
-          <p className="text-3xl font-bold mt-2">14</p>
+          <p className="text-3xl font-bold mt-2">0</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <h3 className="text-sm font-medium text-muted-foreground">Last Consultation</h3>
-          <p className="text-xl font-bold mt-2">2 Days Ago</p>
-          <p className="text-sm text-muted-foreground mt-1">St. Nicholas Hospital</p>
+          <p className="text-xl font-bold mt-2">-</p>
+          <p className="text-sm text-muted-foreground mt-1">No recent visits</p>
         </div>
       </div>
 
       <div className="rounded-3xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="border-b border-border/60 p-6">
-          <h2 className="text-lg font-semibold">Recent Health Records</h2>
+        <div className="border-b border-border/60 p-6 flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Active Doctor Sessions</h2>
+          <button className="text-xs font-semibold px-3 py-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors">
+            Revoke All
+          </button>
         </div>
         <div className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3].map((_, i) => (
-              <div key={i} className="rounded-xl border border-border/40 p-4 transition-colors hover:bg-accent/40 flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-flex items-center rounded-full bg-success/15 px-2 py-0.5 text-xs font-medium text-success border border-success/20">Verified</span>
-                    <p className="text-sm font-medium">General Consultation</p>
+          {patientData.accessTokens?.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No doctors currently have access to your vault.</p>
+          ) : (
+            <div className="space-y-4">
+              {patientData.accessTokens?.filter((t: any) => t.status === 'ACTIVE').map((token: any) => (
+                <div key={token.id} className="rounded-xl border border-border/40 p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">{token.provider?.name || 'Unknown Doctor'}</p>
+                    <p className="text-xs text-muted-foreground">Expires: {new Date(token.expiresAt).toLocaleString()}</p>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">Dr. Ibrahim • General Hospital Gbagada</p>
-                  <p className="text-xs text-muted-foreground/80 font-mono bg-background/50 inline-block px-2 py-1 rounded">Hash: 8f4e2...a91c</p>
+                  <button className="text-xs text-destructive hover:underline font-medium">Revoke</button>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium">May 15, 2026</p>
-                  <button className="mt-2 text-xs font-semibold text-primary hover:underline">View Details</button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

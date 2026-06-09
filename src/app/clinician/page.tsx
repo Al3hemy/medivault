@@ -10,12 +10,41 @@ export default function ClinicianDashboard() {
   const [searchMvid, setSearchMvid] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [aiSummary, setAiSummary] = useState('');
+  const [showEntryForm, setShowEntryForm] = useState(false);
+  
+  const [complaint, setComplaint] = useState('');
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth');
+      router.push('/auth/signin');
     }
   }, [status, router]);
+
+  // AI Co-Pilot hook
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (complaint.length > 15) {
+        setIsTyping(true);
+        fetch('/api/ai/copilot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ complaint })
+        })
+        .then(res => res.json())
+        .then(data => {
+          setAiSuggestions(data.suggestions || []);
+          setIsTyping(false);
+        })
+        .catch(() => setIsTyping(false));
+      } else {
+        setAiSuggestions([]);
+      }
+    }, 1000); // 1s debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [complaint]);
 
   if (status === 'loading') return <div className="p-24 text-center">Loading...</div>;
   if (!session) return null;
@@ -23,7 +52,6 @@ export default function ClinicianDashboard() {
   const handleLookup = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate lookup
     setTimeout(() => {
       setIsLoading(false);
     }, 1000);
@@ -95,64 +123,101 @@ export default function ClinicianDashboard() {
         </div>
 
         <div className="md:col-span-2">
-          <div className="rounded-3xl border border-border bg-card shadow-sm overflow-hidden h-full">
-            <div className="border-b border-border/60 p-6 flex justify-between items-center">
-              <div>
-                <h2 className="text-lg font-semibold">Adaeze Okafor</h2>
-                <p className="text-sm text-muted-foreground font-mono">MV-2026-7X4Q-K2P9</p>
-              </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-3 py-1 text-xs font-medium text-success border border-success/20">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success"></span> Active Session
-              </span>
-            </div>
-            
-            <div className="p-6">
-              <h3 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Clinical History</h3>
-              <div className="space-y-6 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
-                
-                {/* Timeline Item */}
-                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-primary bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                    <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  </div>
-                  <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border border-border bg-background/50 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-sm">General Consultation</h4>
-                      <time className="text-xs text-muted-foreground">May 15, 2026</time>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-3">Patient presented with acute lower back pain, radiating to the left leg. Symptoms began 3 days ago after lifting heavy boxes.</p>
-                    <div className="text-[10px] font-mono text-muted-foreground/60 break-all bg-accent/30 p-1.5 rounded">
-                      Hash: 8f4e2...a91c
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Timeline Item */}
-                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-border bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                  </div>
-                  <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border border-border bg-background/50 shadow-sm">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-sm">Malaria Test</h4>
-                      <time className="text-xs text-muted-foreground">Mar 10, 2026</time>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-3">RDT positive for P. falciparum. Prescribed Artemether-Lumefantrine.</p>
-                    <div className="text-[10px] font-mono text-muted-foreground/60 break-all bg-accent/30 p-1.5 rounded">
-                      Hash: 3b2a1...f72b
-                    </div>
-                  </div>
+          {showEntryForm ? (
+            <div className="rounded-3xl border border-border bg-card shadow-sm p-6 relative">
+              <button onClick={() => setShowEntryForm(false)} className="absolute top-6 right-6 text-sm font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+              <h2 className="text-xl font-semibold mb-6">New Clinical Entry</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 flex items-center gap-2">
+                    Presenting Complaint
+                    {isTyping && <span className="text-[10px] text-primary animate-pulse flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block" /> AI Thinking...</span>}
+                  </label>
+                  <textarea 
+                    value={complaint}
+                    onChange={(e) => setComplaint(e.target.value)}
+                    className="w-full rounded-xl border border-border/60 bg-background/50 px-4 py-3 outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all min-h-[100px] text-sm"
+                    placeholder="Describe the patient's symptoms..."
+                  />
                 </div>
 
+                {/* AI Co-Pilot Suggestions Box */}
+                {aiSuggestions.length > 0 && (
+                  <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-2">
+                    <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                      AI Co-Pilot Suggestions
+                    </p>
+                    <ul className="space-y-1">
+                      {aiSuggestions.map((suggestion, idx) => (
+                        <li key={idx} className="text-sm flex items-start gap-2">
+                          <span className="text-primary mt-0.5">•</span> {suggestion}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Clinical Examination</label>
+                  <textarea className="w-full rounded-xl border border-border/60 bg-background/50 px-4 py-3 outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all min-h-[100px] text-sm" placeholder="Examination findings..." />
+                </div>
+                
+                <div className="pt-4 flex justify-end gap-3">
+                  <button className="h-10 px-6 rounded-xl text-primary-foreground font-semibold shadow-glow [background-image:var(--gradient-primary)] hover:brightness-110 transition-all text-sm">
+                    Sign & Encrypt Entry
+                  </button>
+                </div>
               </div>
             </div>
-            
-            <div className="border-t border-border/60 p-4 bg-accent/10">
-              <button className="w-full h-12 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:border-primary/50 transition-all font-medium text-sm flex items-center justify-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-                Add New Clinical Entry
-              </button>
+          ) : (
+            <div className="rounded-3xl border border-border bg-card shadow-sm overflow-hidden h-full">
+              <div className="border-b border-border/60 p-6 flex justify-between items-center">
+                <div>
+                  <h2 className="text-lg font-semibold">Adaeze Okafor</h2>
+                  <p className="text-sm text-muted-foreground font-mono">MV-2026-7X4Q-K2P9</p>
+                </div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-3 py-1 text-xs font-medium text-success border border-success/20">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success"></span> Active Session
+                </span>
+              </div>
+              
+              <div className="p-6">
+                <h3 className="font-semibold mb-4 text-sm uppercase tracking-wider text-muted-foreground">Clinical History</h3>
+                <div className="space-y-6 relative before:absolute before:inset-0 before:ml-2 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+                  
+                  {/* Timeline Item */}
+                  <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-primary bg-background shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    </div>
+                    <div className="w-[calc(100%-2.5rem)] md:w-[calc(50%-1.5rem)] p-4 rounded-xl border border-border bg-background/50 shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-sm">General Consultation</h4>
+                        <time className="text-xs text-muted-foreground">May 15, 2026</time>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">Patient presented with acute lower back pain, radiating to the left leg. Symptoms began 3 days ago after lifting heavy boxes.</p>
+                      <div className="text-[10px] font-mono text-muted-foreground/60 break-all bg-accent/30 p-1.5 rounded">
+                        Hash: 8f4e2...a91c
+                      </div>
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+              
+              <div className="border-t border-border/60 p-4 bg-accent/10">
+                <button 
+                  onClick={() => setShowEntryForm(true)}
+                  className="w-full h-12 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:bg-accent/50 hover:text-foreground hover:border-primary/50 transition-all font-medium text-sm flex items-center justify-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                  Add New Clinical Entry
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
