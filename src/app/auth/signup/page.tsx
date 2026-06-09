@@ -12,6 +12,7 @@ export default function SignUp() {
   const roles = [
     { id: 'PATIENT', label: 'Patient' },
     { id: 'CLINICIAN', label: 'Doctor / Clinical' },
+    { id: 'PHARMACIST', label: 'Pharmacist' },
     { id: 'ADMIN', label: 'Admin (Hospital)' },
     { id: 'LAB', label: 'Lab' }
   ];

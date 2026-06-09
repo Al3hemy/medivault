@@ -94,30 +94,60 @@ export default function PatientDashboard() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="rounded-3xl border border-border bg-card shadow-sm overflow-hidden"
+        className="grid gap-6 md:grid-cols-2 mb-8"
       >
-        <div className="border-b border-border/60 p-6 flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Active Doctor Sessions</h2>
-          <button className="text-xs font-semibold px-3 py-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors">
-            Revoke All
-          </button>
-        </div>
-        <div className="p-6">
-          {patientData.accessTokens?.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No doctors currently have access to your vault.</p>
-          ) : (
-            <div className="space-y-4">
-              {patientData.accessTokens?.filter((t: any) => t.status === 'ACTIVE').map((token: any) => (
-                <div key={token.id} className="rounded-xl border border-border/40 p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">{token.provider?.name || 'Unknown Doctor'}</p>
-                    <p className="text-xs text-muted-foreground">Expires: {new Date(token.expiresAt).toLocaleString()}</p>
-                  </div>
-                  <button className="text-xs text-destructive hover:underline font-medium">Revoke</button>
-                </div>
-              ))}
+        <div className="rounded-3xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="border-b border-border/60 p-6 flex justify-between items-center">
+            <h2 className="text-lg font-semibold">Wearable IoT Health Sync</h2>
+            <button onClick={() => alert("Simulating Apple HealthKit / Fitbit API OAuth flow...")} className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors">
+              Connect Watch
+            </button>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="flex justify-between items-center p-3 rounded-lg border border-border bg-background">
+              <span className="text-sm font-medium">Heart Rate</span>
+              <span className="text-sm font-bold text-destructive">72 bpm</span>
             </div>
-          )}
+            <div className="flex justify-between items-center p-3 rounded-lg border border-border bg-background">
+              <span className="text-sm font-medium">Blood Oxygen</span>
+              <span className="text-sm font-bold text-success">98% SPO2</span>
+            </div>
+            <div className="flex justify-between items-center p-3 rounded-lg border border-border bg-background">
+              <span className="text-sm font-medium">Steps Today</span>
+              <span className="text-sm font-bold text-primary">4,192</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="border-b border-border/60 p-6 flex justify-between items-center">
+            <h2 className="text-lg font-semibold">Active Doctor Sessions</h2>
+            <div className="flex gap-2">
+              <button onClick={() => alert("Telemedicine SDK requires camera permissions. (Mock UI Activated: Joining waiting room...)")} className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors">
+                Video Consult
+              </button>
+              <button className="text-xs font-semibold px-3 py-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20 transition-colors">
+                Revoke All
+              </button>
+            </div>
+          </div>
+          <div className="p-6">
+            {patientData.accessTokens?.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No doctors currently have access to your vault.</p>
+            ) : (
+              <div className="space-y-4">
+                {patientData.accessTokens?.filter((t: any) => t.status === 'ACTIVE').map((token: any) => (
+                  <div key={token.id} className="rounded-xl border border-border/40 p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{token.provider?.name || 'Unknown Doctor'}</p>
+                      <p className="text-xs text-muted-foreground">Expires: {new Date(token.expiresAt).toLocaleString()}</p>
+                    </div>
+                    <button className="text-xs text-destructive hover:underline font-medium">Revoke</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
     </motion.div>

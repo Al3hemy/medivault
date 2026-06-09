@@ -38,6 +38,15 @@ export default function SignIn() {
           <input type="password" id="password" placeholder="••••••••" className={styles.input} />
         </div>
         <button type="button" className={styles.primaryBtn}>Sign In</button>
+      
+        <div className="text-center mt-6">
+          <button type="button" onClick={() => {
+            alert("WebAuthn requires HTTPS and registered Hardware Keys. (Mock UI Activated: Scanning FaceID...)");
+          }} className="flex items-center justify-center gap-2 w-full p-3 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors text-primary font-semibold text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-fingerprint"><path d="M12 12h.01"/><path d="M16 12h.01"/><path d="M8 12h.01"/><path d="M12 16h.01"/><path d="M16 16h.01"/><path d="M8 16h.01"/><path d="M12 20h.01"/><path d="M16 20h.01"/><path d="M8 20h.01"/><path d="M12 8h.01"/><path d="M16 8h.01"/><path d="M8 8h.01"/><path d="M12 4h.01"/><path d="M16 4h.01"/><path d="M8 4h.01"/><path d="M4 12v4a8 8 0 0 0 16 0v-4"/><path d="M12 22v-6"/><path d="M8 22v-6"/><path d="M16 22v-6"/><path d="M4 16v-6a8 8 0 0 1 16 0v6"/></svg>
+            Sign in with Face ID / Touch ID
+          </button>
+        </div>
       </form>
 
       <p className={styles.footerText}>

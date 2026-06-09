@@ -15,6 +15,8 @@ export default function ClinicianDashboard() {
   const [complaint, setComplaint] = useState('');
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const [isDiagnosing, setIsDiagnosing] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState('');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -72,6 +74,41 @@ export default function ClinicianDashboard() {
     }
   };
 
+  const handleDiagnosisSubmit = async () => {
+    if (!complaint) return;
+    setIsDiagnosing(true);
+    setSubmissionStatus('Generating cryptographic hash...');
+
+    try {
+      const res = await fetch('/api/blockchain/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mvid: searchMvid || 'MV-2026-7X4Q-K2P9', complaint, diagnosis: '' })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        setSubmissionStatus(`Blockchain Secured. TxHash: ${data.txHash.substring(0,10)}...`);
+        setTimeout(() => {
+          setSubmissionStatus('');
+          setComplaint('');
+          setAiSuggestions([]);
+          setShowEntryForm(false);
+        }, 3000);
+      } else {
+        setSubmissionStatus('Failed to secure record.');
+      }
+    } catch (err) {
+      setSubmissionStatus('Network error.');
+    } finally {
+      setIsDiagnosing(false);
+    }
+  };
+
+  const handleVideoCall = () => {
+    alert("Telemedicine SDK requires camera permissions. (Mock UI Activated: Dialing Patient...)");
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-4 pt-24 pb-12">
       <div className="mb-8 flex items-center justify-between">
@@ -79,6 +116,10 @@ export default function ClinicianDashboard() {
           <h1 className="text-3xl font-bold">Clinician Portal</h1>
           <p className="text-muted-foreground mt-1">Dr. {session.user?.name} • General Practice</p>
         </div>
+        <button onClick={handleVideoCall} className="bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 px-4 py-2 rounded-xl flex items-center gap-2 transition-colors font-semibold text-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+          Video Consult
+        </button>
       </div>
 
       <div className="grid gap-8 md:grid-cols-3">
@@ -137,37 +178,33 @@ export default function ClinicianDashboard() {
                   <textarea 
                     value={complaint}
                     onChange={(e) => setComplaint(e.target.value)}
-                    className="w-full rounded-xl border border-border/60 bg-background/50 px-4 py-3 outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all min-h-[100px] text-sm"
-                    placeholder="Describe the patient's symptoms..."
+                    className="w-full h-32 rounded-xl border border-border bg-background p-4 text-sm resize-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                    placeholder="E.g. 45yo male presents with acute lower quadrant pain..."
                   />
                 </div>
 
-                {/* AI Co-Pilot Suggestions Box */}
                 {aiSuggestions.length > 0 && (
-                  <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-2">
-                    <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
-                      AI Co-Pilot Suggestions
-                    </p>
-                    <ul className="space-y-1">
-                      {aiSuggestions.map((suggestion, idx) => (
-                        <li key={idx} className="text-sm flex items-start gap-2">
-                          <span className="text-primary mt-0.5">•</span> {suggestion}
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                    <h4 className="text-xs font-bold text-primary tracking-wider uppercase mb-3">AI Co-Pilot Suggestions</h4>
+                    <ul className="space-y-2">
+                      {aiSuggestions.map((s, i) => (
+                        <li key={i} className="text-sm flex items-start gap-2 text-foreground/80">
+                          <span className="text-primary mt-0.5">•</span> {s}
                         </li>
                       ))}
                     </ul>
                   </div>
                 )}
 
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Clinical Examination</label>
-                  <textarea className="w-full rounded-xl border border-border/60 bg-background/50 px-4 py-3 outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all min-h-[100px] text-sm" placeholder="Examination findings..." />
-                </div>
-                
-                <div className="pt-4 flex justify-end gap-3">
-                  <button className="h-10 px-6 rounded-xl text-primary-foreground font-semibold shadow-glow [background-image:var(--gradient-primary)] hover:brightness-110 transition-all text-sm">
-                    Sign & Encrypt Entry
+                <div className="pt-4 flex flex-col items-end gap-3">
+                  <button 
+                    onClick={handleDiagnosisSubmit}
+                    disabled={isDiagnosing || !complaint}
+                    className="h-10 px-6 rounded-xl text-primary-foreground font-semibold shadow-glow [background-image:var(--gradient-primary)] hover:brightness-110 transition-all text-sm disabled:opacity-50"
+                  >
+                    {isDiagnosing ? 'Securing on Blockchain...' : 'Sign & Encrypt Entry'}
                   </button>
+                  {submissionStatus && <p className="text-sm text-success font-medium">{submissionStatus}</p>}
                 </div>
               </div>
             </div>
