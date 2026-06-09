@@ -5,33 +5,73 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id           String   @id @default(uuid())
-  role         String   // PATIENT, CLINICIAN, LAB, ADMIN
-  nin          String   @unique
-  fullName     String
-  email        String?  @unique
-  phoneNumber  String?
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          String    @default("PATIENT") // PATIENT, CLINICIAN, LAB, ADMIN
+  nin           String?   @unique
+  phoneNumber   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  patient   Patient?
-  clinician Clinician?
-  accessTokens AccessToken[]
+  accounts      Account[]
+  sessions      Session[]
+  patient       Patient?
+  clinician     Clinician?
+  accessTokens  AccessToken[] // Tokens given out by this user (if any)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 model Patient {
-  id           String   @id @default(uuid())
+  id           String   @id @default(cuid())
   userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id])
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   mvid         String   @unique
-  dateOfBirth  DateTime
-  sex          String
+  dateOfBirth  DateTime?
+  sex          String?
   bloodGroup   String?
   guardianId   String?  // Reference to another User if minor
   
@@ -40,22 +80,22 @@ model Patient {
 }
 
 model Clinician {
-  id                 String   @id @default(uuid())
+  id                 String   @id @default(cuid())
   userId             String   @unique
-  user               User     @relation(fields: [userId], references: [id])
-  mdcnNumber         String   @unique
-  specialty          String
-  hospitalAffiliation String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mdcnNumber         String?  @unique
+  specialty          String?
+  hospitalAffiliation String?
 
   clinicalEntries    ClinicalEntry[]
 }
 
 model ClinicalEntry {
-  id                  String   @id @default(uuid())
+  id                  String   @id @default(cuid())
   patientId           String
-  patient             Patient  @relation(fields: [patientId], references: [id])
+  patient             Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
   clinicianId         String
-  clinician           Clinician @relation(fields: [clinicianId], references: [id])
+  clinician           Clinician @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
   consultationDate    DateTime @default(now())
   presentingComplaint String
   examination         String
@@ -67,11 +107,11 @@ model ClinicalEntry {
 }
 
 model AccessToken {
-  id          String   @id @default(uuid())
+  id          String   @id @default(cuid())
   patientId   String
-  patient     Patient  @relation("PatientTokens", fields: [patientId], references: [id])
+  patient     Patient  @relation("PatientTokens", fields: [patientId], references: [id], onDelete: Cascade)
   providerId  String
-  provider    User     @relation(fields: [providerId], references: [id])
+  provider    User     @relation(fields: [providerId], references: [id], onDelete: Cascade)
   tokenString String   @unique
   expiresAt   DateTime
   status      String   // ACTIVE, REVOKED, EXPIRED
@@ -79,7 +119,7 @@ model AccessToken {
 }
 
 model AuditLog {
-  id             String   @id @default(uuid())
+  id             String   @id @default(cuid())
   userId         String
   action         String   // READ, WRITE, REVOKE, EMERGENCY_ACCESS
   targetRecordId String
