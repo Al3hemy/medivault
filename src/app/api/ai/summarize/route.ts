@@ -1,30 +1,38 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(req: Request) {
   try {
     const { mvid } = await req.json();
 
-    // Check if API key exists
-    if (!process.env.GEMINI_API_KEY) {
-      // Mock AI Response for Demo
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      return NextResponse.json({ 
-        summary: `**AI Clinical Digest for ${mvid}**\n\n- **Chronic Conditions**: None reported.\n- **Recent Visit (May 2026)**: Acute lower back pain (radicular symptoms). Suspected sciatica.\n- **History**: Treated for Malaria in March 2026.\n- **Flagged Risks**: Monitor back pain progression; advise MRI if unresolved in 2 weeks.`
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return NextResponse.json({
+        summary: `**AI Patient Digest for ${mvid}**\n\nPatient is a 32-year-old with a history of hypertension. Last visit was 2 months ago for routine checkup. Current medications include Amlodipine 5mg. No known drug allergies.`
       });
     }
 
-    const ai = new GoogleGenAI({});
-    // For a real app, we would fetch patient's history from Prisma here
-    const prompt = `Summarize the following clinical history for a doctor. Keep it concise, highlighting chronic conditions, recent visits, and risks:\n\nPatient MVID: ${mvid}\n- May 2026: Acute lower back pain, radiating to left leg.\n- March 2026: Positive for Malaria.`;
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
+    // In a full implementation, you would fetch the patient's records from Prisma here
+    // and feed them into the prompt.
+    const prompt = `You are a medical AI. Summarize the following mocked medical history for patient ${mvid}:
+    - 32 year old female.
+    - History of hypertension.
+    - Last visit 2 months ago for routine checkup.
+    - Current medications: Amlodipine 5mg.
+    
+    Write a professional, concise 3-sentence clinical summary in Markdown.`;
+
+    const result = await model.generateContent(prompt);
+    
+    return NextResponse.json({
+      summary: result.response.text()
     });
 
-    return NextResponse.json({ summary: response.text });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to generate summary' }, { status: 500 });
   }
 }

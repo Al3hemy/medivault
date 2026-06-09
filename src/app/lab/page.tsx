@@ -7,7 +7,9 @@ export default function LabDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mvid, setMvid] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -15,13 +17,35 @@ export default function LabDashboard() {
     }
   }, [status, router]);
 
-  const handleUpload = () => {
-    if (!mvid) return;
-    setUploadStatus('Uploading...');
-    setTimeout(() => {
-      setUploadStatus('Lab result uploaded successfully and linked to ' + mvid);
-      setMvid('');
-    }, 1500);
+  const handleUpload = async () => {
+    if (!mvid || !file) return;
+    setIsUploading(true);
+    setUploadStatus('Uploading to secure vault...');
+    
+    try {
+      const formData = new FormData();
+      formData.append('mvid', mvid);
+      formData.append('file', file);
+
+      const res = await fetch('/api/lab/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        setUploadStatus(`Success! Document linked to ${mvid}`);
+        setMvid('');
+        setFile(null);
+      } else {
+        setUploadStatus('Upload failed: ' + data.error);
+      }
+    } catch (err) {
+      setUploadStatus('Network error during upload.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   if (status === 'loading') return <div className="p-24 text-center">Loading...</div>;
@@ -44,16 +68,29 @@ export default function LabDashboard() {
                 placeholder="Enter MVID..." 
                 value={mvid}
                 onChange={(e) => setMvid(e.target.value)}
-                className="flex-1 rounded-lg border border-border bg-background px-3 text-sm" 
+                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm" 
+              />
+            </div>
+            <div>
+              <input 
+                type="file" 
+                accept=".pdf,image/*"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all cursor-pointer"
               />
             </div>
             <button 
               onClick={handleUpload}
-              className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-semibold hover:brightness-110"
+              disabled={isUploading || !mvid || !file}
+              className="bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-semibold hover:brightness-110 disabled:opacity-50 transition-all"
             >
-              Upload PDF Result
+              {isUploading ? 'Uploading...' : 'Upload Result'}
             </button>
-            {uploadStatus && <p className="text-sm text-success font-medium">{uploadStatus}</p>}
+            {uploadStatus && (
+              <p className={`text-sm font-medium ${uploadStatus.includes('failed') || uploadStatus.includes('error') ? 'text-destructive' : 'text-success'}`}>
+                {uploadStatus}
+              </p>
+            )}
           </div>
 
           <div className="glass-panel p-6 rounded-2xl flex flex-col gap-4">
