@@ -1,0 +1,88 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  role         String   // PATIENT, CLINICIAN, LAB, ADMIN
+  nin          String   @unique
+  fullName     String
+  email        String?  @unique
+  phoneNumber  String?
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  patient   Patient?
+  clinician Clinician?
+  accessTokens AccessToken[]
+}
+
+model Patient {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  mvid         String   @unique
+  dateOfBirth  DateTime
+  sex          String
+  bloodGroup   String?
+  guardianId   String?  // Reference to another User if minor
+  
+  clinicalEntries ClinicalEntry[]
+  accessTokens    AccessToken[] @relation("PatientTokens")
+}
+
+model Clinician {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id])
+  mdcnNumber         String   @unique
+  specialty          String
+  hospitalAffiliation String
+
+  clinicalEntries    ClinicalEntry[]
+}
+
+model ClinicalEntry {
+  id                  String   @id @default(uuid())
+  patientId           String
+  patient             Patient  @relation(fields: [patientId], references: [id])
+  clinicianId         String
+  clinician           Clinician @relation(fields: [clinicianId], references: [id])
+  consultationDate    DateTime @default(now())
+  presentingComplaint String
+  examination         String
+  diagnosisIcd10      String
+  treatmentPlan       String
+  previousEntryHash   String?
+  entryHash           String   // SHA-256 signature
+  createdAt           DateTime @default(now())
+}
+
+model AccessToken {
+  id          String   @id @default(uuid())
+  patientId   String
+  patient     Patient  @relation("PatientTokens", fields: [patientId], references: [id])
+  providerId  String
+  provider    User     @relation(fields: [providerId], references: [id])
+  tokenString String   @unique
+  expiresAt   DateTime
+  status      String   // ACTIVE, REVOKED, EXPIRED
+  createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  userId         String
+  action         String   // READ, WRITE, REVOKE, EMERGENCY_ACCESS
+  targetRecordId String
+  timestamp      DateTime @default(now())
+  ipAddress      String?
+}

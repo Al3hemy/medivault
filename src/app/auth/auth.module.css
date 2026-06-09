@@ -1,0 +1,252 @@
+.authContainer {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.leftPane {
+  flex: 1;
+  background: var(--gradient-main);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .leftPane {
+    display: none;
+  }
+}
+
+.logoContainer {
+  z-index: 10;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: white;
+  text-decoration: none;
+}
+
+.decorativeContent {
+  margin-top: auto;
+  margin-bottom: auto;
+  z-index: 10;
+}
+
+.decorativeContent h2 {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+}
+
+.decorativeContent p {
+  font-size: 1.25rem;
+  opacity: 0.9;
+}
+
+/* Background Blobs for Left Pane */
+.blob1, .blob2 {
+  position: absolute;
+  filter: blur(60px);
+  z-index: 1;
+  border-radius: 50%;
+  animation: floatAuth 10s ease-in-out infinite;
+}
+
+.blob1 {
+  top: -10%;
+  right: -20%;
+  width: 400px;
+  height: 400px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.blob2 {
+  bottom: -10%;
+  left: -20%;
+  width: 500px;
+  height: 500px;
+  background: rgba(0, 0, 0, 0.1);
+  animation-delay: -5s;
+}
+
+@keyframes floatAuth {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-30px, 40px) scale(1.05); }
+}
+
+.rightPane {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  padding: 2rem;
+}
+
+.formWrapper {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Common form styles */
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.subtitle {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.inputGroup label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-color);
+}
+
+.input {
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.primaryBtn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+  margin-top: 0.5rem;
+}
+
+.primaryBtn:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.divider::before { margin-right: .5em; }
+.divider::after { margin-left: .5em; }
+
+.googleBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.googleBtn:hover {
+  background: var(--border-color);
+  transform: translateY(-2px);
+}
+
+.footerText {
+  margin-top: 1.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.link {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.roleSelector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.roleCard {
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  border-radius: 12px;
+  padding: 1rem 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.roleCard:hover {
+  border-color: var(--primary);
+  background: rgba(124, 58, 237, 0.05);
+}
+
+.roleCardSelected {
+  border: 2px solid var(--primary);
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--primary);
+  font-weight: 600;
+}
