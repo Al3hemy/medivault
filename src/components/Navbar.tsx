@@ -15,6 +15,7 @@ export default function Navbar() {
     switch ((session?.user as any)?.role) {
       case 'PATIENT': return '/patient';
       case 'CLINICIAN': return '/clinician';
+      case 'PHARMACIST': return '/pharmacy';
       case 'ADMIN': return '/admin';
       case 'LAB': return '/lab';
       default: return '/';

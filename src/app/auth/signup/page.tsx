@@ -17,6 +17,37 @@ export default function SignUp() {
     { id: 'LAB', label: 'Lab' }
   ];
 
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, fullName: name, email, password })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        window.location.href = '/auth/signin?registered=true';
+      } else {
+        setError(data.error || 'Registration failed');
+      }
+    } catch (err) {
+      setError('Network error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -38,7 +69,7 @@ export default function SignUp() {
         ))}
       </div>
 
-      <button className={styles.googleBtn}>
+      <button className={styles.googleBtn} type="button" onClick={() => alert("Google OAuth requires API keys. Please use email signup for now.")}>
         <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
           <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
             <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"/>
@@ -52,20 +83,23 @@ export default function SignUp() {
 
       <div className={styles.divider}>or register with email</div>
 
-      <form className={styles.form} onSubmit={(e) => { e.preventDefault(); alert("Signup is mocked for MVP. Please use Sign In instead."); }}>
+      <form className={styles.form} onSubmit={handleSignup}>
         <div className={styles.inputGroup}>
           <label htmlFor="name">Full Name</label>
-          <input type="text" id="name" placeholder="John Doe" className={styles.input} />
+          <input type="text" id="name" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} className={styles.input} required />
         </div>
         <div className={styles.inputGroup}>
           <label htmlFor="email">Email Address</label>
-          <input type="email" id="email" placeholder="you@example.com" className={styles.input} />
+          <input type="email" id="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} className={styles.input} required />
         </div>
         <div className={styles.inputGroup}>
           <label htmlFor="password">Password</label>
-          <input type="password" id="password" placeholder="••••••••" className={styles.input} />
+          <input type="password" id="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className={styles.input} required minLength={6} />
         </div>
-        <button type="submit" className={styles.primaryBtn}>Create {roles.find(r => r.id === role)?.label} Account</button>
+        {error && <p className="text-destructive text-sm text-center font-medium mt-2">{error}</p>}
+        <button type="submit" disabled={isSubmitting} className={styles.primaryBtn}>
+          {isSubmitting ? 'Creating Vault...' : `Create ${roles.find(r => r.id === role)?.label} Account`}
+        </button>
       </form>
 
       <p className={styles.footerText}>
